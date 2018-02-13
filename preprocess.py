@@ -45,6 +45,7 @@ def preprocess_brown(conf):
     print_set_to_file(train, word_dict, conf['brown__train_file'])
     print_set_to_file(valid, word_dict, conf['brown__valid_file'])
     print_set_to_file(test, word_dict, conf['brown__test_file'])
+    print_set_to_file(words, word_dict, conf['brown__file'])
 
     pkl.dump(word_dict, open(conf['brown__dict_file'], 'wb'))
 
