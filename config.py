@@ -6,6 +6,7 @@ conf = {
     'brown__train_file': 'brown_train.txt',
     'brown__valid_file': 'brown_valid.txt',
     'brown__test_file': 'brown_test.txt',
+    'brown__file': 'brown.txt',
     'brown__train_size': 800000,
     'brown__valid_size': 200000,
 
@@ -17,12 +18,12 @@ conf = {
     'w2v_path': "C:\\Wiki\\wiki.word2vec.bin",
     'model_paths': 'Models\\model_{epoch:02d}_{val_loss:.2f}.hdf5',
 
-    'batch_size': 500,
-    'max_len': 50,
+    'batch_size': 100,
+    'max_len': 40,
     'epochs': 10,
-    'train_steps': 800000,
-    'valid_steps': 200000,
-    'test_steps': 218532,
+    'train_steps': 34152,
+    'valid_steps': 10053,
+    'test_steps': 13137,
     'workers': 4,
 
     'verbose': 1,
