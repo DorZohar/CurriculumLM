@@ -78,6 +78,9 @@ def test_language_model(model, test_gen, conf):
 
 
 def main():
+
+    np.random.seed(42)
+
     conf = config.conf
     word2vec = KeyedVectors.load_word2vec_format(conf['w2v_path'], binary=True)
     word_dict = pkl.load(open(conf['brown__dict_file'], 'rb'))
