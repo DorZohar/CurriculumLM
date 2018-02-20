@@ -26,7 +26,7 @@ def perplexity2(y_true, y_pred, mask=None):
 
 def create_embedding_matrix(word_dict, word2vec):
 
-    classes = len(word_dict) + 1
+    classes = len(word_dict) + 2
     vec_size = word2vec.vector_size
     matrix = np.zeros((classes, vec_size))
 
@@ -109,8 +109,6 @@ def train_language_model(model, conf, word2id, classes, iter=None):
                                                  save_best_only=True,
                                                  mode='min',
                                                  verbose=conf['verbose'])
-
-
 
     model.fit_generator(train_gen,
                         steps_per_epoch=conf['train_steps'] / conf['batch_size'],
