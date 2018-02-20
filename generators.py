@@ -30,7 +30,7 @@ def threadsafe_generator(f):
 
 
 @threadsafe_generator
-def brown_generator(file_path, batch_size, max_len, is_test=False):
+def brown_generator(file_path, batch_size, max_len, word_dict, classes, is_test=False):
 
     batch_sentences = []
     i = 0
@@ -38,7 +38,7 @@ def brown_generator(file_path, batch_size, max_len, is_test=False):
         with open(file_path, 'r') as file:
             for line in file:
                 line = line.strip('\n').split(' ')
-                line = [int(word_id) for word_id in line]
+                line = [word_dict[word] if word in word_dict else classes for word in line]
                 pos = 0
                 while pos < len(line):
                     sentence = line[pos:pos+max_len]

@@ -23,7 +23,6 @@ Author: Michael Heilman (mheilman@ets.org, mheilman@cs.cmu.edu)
 
 import random
 import argparse
-import glob
 import re
 import itertools
 import logging

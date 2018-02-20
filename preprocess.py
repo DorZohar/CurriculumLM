@@ -5,16 +5,15 @@ import pickle as pkl
 
 
 END_WORD = 'END'
+UNKNOWN_WORD = 'UNK'
 
 
 def print_set_to_file(words, word_dict, path):
 
-    unk_symbol = str(len(word_dict))
-    end_symbol = str(word_dict[END_WORD])
-    word_ids = [str(word_dict[word]) if word in word_dict else unk_symbol for word in words]
+    word_ids = [word if word in word_dict else UNKNOWN_WORD for word in words]
 
     str_word_ids = ' '.join(word_ids)
-    str_lines = str_word_ids.replace(" %s " % end_symbol, ' %s\n' % end_symbol)
+    str_lines = str_word_ids.replace(" %s " % END_WORD, ' %s\n' % END_WORD)
 
     with open(path, 'w') as f:
         f.write(str_lines)
@@ -24,7 +23,9 @@ def preprocess_brown(conf):
 
     words = []
     for sent in brown.sents():
-        words += sent + [END_WORD]
+        if len(sent) < 5:
+            continue
+        words += [w.lower() for w in sent] + [END_WORD]
 
     print("Number of words: %d" % len(words))
 
