@@ -33,33 +33,39 @@ def threadsafe_generator(f):
 def brown_generator(file_path, batch_size, max_len, word_dict, classes, is_test=False):
 
     batch_sentences = []
+    batch_targets = []
     i = 0
     while True:
         with open(file_path, 'r') as file:
             for line in file:
                 line = line.strip('\n').split(' ')
                 line = [word_dict[word] if word in word_dict else classes for word in line]
-                pos = 0
-                while pos < len(line):
-                    sentence = line[pos:pos+max_len]
-                    batch_sentences.append(sentence)
-                    i += 1
-                    pos += max_len
-                    if i >= batch_size:
+                batch_sentences.append(line)
+                batch_targets.append(line[1:] + [0])
+                i += 1
+                if i >= batch_size:
 
-                        sequences = keras.preprocessing.sequence.pad_sequences(batch_sentences,
-                                                                              maxlen=max_len,
-                                                                              padding='pre',
-                                                                              truncating='post',
-                                                                              )
+                    sequences = keras.preprocessing.sequence.pad_sequences(batch_sentences,
+                                                                          maxlen=max_len,
+                                                                          padding='pre',
+                                                                          truncating='post',
+                                                                          )
 
-                        targets = np.expand_dims(sequences, axis=-1)
-                        weights = np.not_equal(sequences, 0).astype(np.float32)
+                    batch_targets = keras.preprocessing.sequence.pad_sequences(batch_targets,
+                                                                               maxlen=max_len,
+                                                                               padding='pre',
+                                                                               truncating='post',
+                                                                               )
 
-                        if is_test:
-                            yield {'Input': sequences}, weights
-                        else:
-                            yield {'Input': sequences}, targets, weights
-                        i = 0
-                        batch_sentences = []
+                    batch_targets = np.expand_dims(batch_targets, axis=-1)
+                    weights = np.not_equal(sequences, 0).astype(np.float32)
+                    weights[:, -1] = 0
+
+                    if is_test:
+                        yield {'Input': sequences}, weights
+                    else:
+                        yield {'Input': sequences}, batch_targets, weights
+                    i = 0
+                    batch_sentences = []
+                    batch_targets = []
 

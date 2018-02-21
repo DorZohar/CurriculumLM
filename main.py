@@ -13,17 +13,6 @@ def perplexity(y_true, y_pred):
     return K.pow(K.constant(2.0), K.mean(K.sparse_categorical_crossentropy(y_true, y_pred)))
 
 
-def perplexity2(y_true, y_pred, mask=None):
-    if mask is not None:
-        y_pred /= K.sum(y_pred, axis=-1, keepdims=True)
-        mask = K.permute_dimensions(K.reshape(mask, y_true.shape[:-1]), (0, 1, 'x'))
-        truth_mask = K.flatten(y_true*mask).nonzero()[0]
-        predictions = K.gather(y_pred.flatten(), truth_mask)
-        return K.pow(2, K.mean(-K.log(predictions)/K.log(2)))
-    else:
-        return K.pow(2, K.mean(-K.log(y_pred)/K.log(2)))
-
-
 def create_embedding_matrix(word_dict, word2vec):
 
     classes = len(word_dict) + 2
@@ -204,6 +193,8 @@ def curriculum_model():
                                                            classes + 1,
                                                            False)
 
+        print("Iteration %d, Classes: %d" % (i+1, classes))
+
         model = create_language_model(conf, classes + 1, embedding_mat, softmax_mat, softmax_bias, lstm_weights)
         train_language_model(model, conf, word2id, classes, i)
         print(test_language_model(model, conf, word2id, classes))
@@ -233,7 +224,7 @@ def curriculum_model():
                                                    False)
 
     model = create_language_model(conf, classes + 1, embedding_mat, softmax_mat, softmax_bias, lstm_weights)
-    train_language_model(model, conf, word_dict, classes, 20)
+    train_language_model(model, conf, word_dict, classes, None)
     print(test_language_model(model, conf, word_dict, classes))
 
 
