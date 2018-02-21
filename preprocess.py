@@ -13,7 +13,7 @@ def print_set_to_file(words, word_dict, path):
     word_ids = [word if word in word_dict else UNKNOWN_WORD for word in words]
 
     str_word_ids = ' '.join(word_ids)
-    str_lines = str_word_ids.replace(" %s " % END_WORD, ' %s\n' % END_WORD)
+    str_lines = str_word_ids.replace(" %s " % END_WORD, '\n')
 
     with open(path, 'w') as f:
         f.write(str_lines)
