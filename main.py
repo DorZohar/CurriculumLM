@@ -175,23 +175,13 @@ def curriculum_model():
         if i > 0:
             old_word2id = word2id
             word2id, classes = general.create_cluster_dict(word2cluster, i + 1)
-            embedding_mat = general.expand_embedding_matrix(embedding_mat,
-                                                            old_word2id,
-                                                            word2id,
-                                                            classes + 1,
-                                                            False)
 
-            softmax_mat = general.expand_embedding_matrix(softmax_mat,
-                                                          old_word2id,
-                                                          word2id,
-                                                          classes + 1,
-                                                          True)
-
-            softmax_bias = general.expand_embedding_matrix(softmax_bias,
-                                                           old_word2id,
-                                                           word2id,
-                                                           classes + 1,
-                                                           False)
+            embedding_mat, softmax_mat, softmax_bias = general.expand_all_matrices(embedding_mat,
+                                                                                   softmax_mat,
+                                                                                   softmax_bias,
+                                                                                   old_word2id,
+                                                                                   word2id,
+                                                                                   classes + 1)
 
         print("Iteration %d, Classes: %d" % (i+1, classes))
 
@@ -205,23 +195,12 @@ def curriculum_model():
 
     classes = len(word_dict) + 1
 
-    embedding_mat = general.expand_embedding_matrix(embedding_mat,
-                                                    word2id,
-                                                    word_dict,
-                                                    classes + 1,
-                                                    False)
-
-    softmax_mat = general.expand_embedding_matrix(softmax_mat,
-                                                  word2id,
-                                                  word_dict,
-                                                  classes + 1,
-                                                  True)
-
-    softmax_bias = general.expand_embedding_matrix(softmax_bias,
-                                                   word2id,
-                                                   word_dict,
-                                                   classes + 1,
-                                                   False)
+    embedding_mat, softmax_mat, softmax_bias = general.expand_all_matrices(embedding_mat,
+                                                                           softmax_mat,
+                                                                           softmax_bias,
+                                                                           word2id,
+                                                                           word_dict,
+                                                                           classes + 1)
 
     model = create_language_model(conf, classes + 1, embedding_mat, softmax_mat, softmax_bias, lstm_weights)
     train_language_model(model, conf, word_dict, classes, None)
