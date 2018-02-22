@@ -70,7 +70,7 @@ def create_language_model(conf, classes, embedding_mat=None, softmax_mat=None, s
     return model
 
 
-def train_language_model(model, conf, word2id, classes, base_path):
+def train_language_model(model, conf, word2id, classes, base_path, is_curriculum=False):
 
     train_gen = brown_generator(conf['brown__train_file'],
                                 conf['batch_size'],
@@ -86,7 +86,7 @@ def train_language_model(model, conf, word2id, classes, base_path):
 
     callbacks = []
 
-    if iter is None:
+    if not is_curriculum:
         epochs = conf['epochs']
         #earlyStop = keras.callbacks.EarlyStopping(patience=2)
         reduceLr = keras.callbacks.ReduceLROnPlateau(factor=0.5,
@@ -213,7 +213,7 @@ def curriculum_model():
         print("Iteration %d, Classes: %d" % (i+1, classes))
 
         model = create_language_model(conf, classes + 1, embedding_mat, softmax_mat, softmax_bias, lstm_weights)
-        train_language_model(model, conf, word2id, classes, '%s\\%.2d\\' % (base_path, i))
+        train_language_model(model, conf, word2id, classes, '%s\\%.2d\\' % (base_path, i), is_curriculum=True)
         print(test_language_model(model, conf, word2id, classes))
 
         embedding_mat = model.get_layer('Embedding').get_weights()[0]

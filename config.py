@@ -23,7 +23,7 @@ conf = {
 
     'batch_size': 100,
     'max_len': 40,
-    'epochs': 20,
+    'epochs': 50,
     'mini_epochs': 5,
     'train_steps': 34152,
     'valid_steps': 10053,
