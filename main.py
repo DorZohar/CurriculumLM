@@ -91,17 +91,18 @@ def train_language_model(model, conf, word2id, classes, base_path, is_curriculum
         #earlyStop = keras.callbacks.EarlyStopping(patience=2)
         reduceLr = keras.callbacks.ReduceLROnPlateau(factor=0.5,
                                                      patience=3,
-                                                     min_lr=conf['lstm__learn_rate'] * 0.25)
+                                                     min_lr=conf['lstm__learn_rate'] * 0.25,
+                                                     verbose=conf['verbose'])
         callbacks.append(reduceLr)
     else:
         epochs = conf['mini_epochs']
-        earlyStop = keras.callbacks.EarlyStopping(patience=0)
+        earlyStop = keras.callbacks.EarlyStopping(patience=0, verbose=conf['verbose'])
         callbacks.append(earlyStop)
 
     if not os.path.exists(base_path):
         os.makedirs(base_path)
 
-    path = '%s\\%s' % (base_path, conf['model_paths'])
+    path = '%s%s' % (base_path, conf['model_paths'])
 
     checkpoint = keras.callbacks.ModelCheckpoint(path,
                                                  save_best_only=True,
@@ -119,7 +120,7 @@ def train_language_model(model, conf, word2id, classes, base_path, is_curriculum
                                   callbacks=callbacks,
                                   verbose=conf['verbose'])
 
-    with open('%s\\history.txt' % base_path, 'w') as f:
+    with open('%shistory.txt' % base_path, 'w') as f:
         f.write('%s' % history.history)
 
 
@@ -158,12 +159,15 @@ def baseline_model():
 
     np.random.seed(42)
 
-    base_path = 'Models\\%s\\' % time.strftime('%Y_%m_%d-%H_%M')
+    if os.name == 'nt':
+        base_path = 'Models\\%s\\' % time.strftime('%Y_%m_%d-%H_%M')
+    else:
+        base_path = 'Models/%s/' % time.strftime('%Y_%m_%d-%H_%M')
 
     if not os.path.exists(base_path):
         os.makedirs(base_path)
 
-    shutil.copy('config.py', '%s//config.py' % base_path)
+    shutil.copy('config.py', '%sconfig.py' % base_path)
 
     conf = config.conf
     word2vec = KeyedVectors.load_word2vec_format(conf['w2v_path'], binary=True)
@@ -181,11 +185,14 @@ def curriculum_model():
 
     np.random.seed(42)
 
-    base_path = 'Models\\%s\\' % time.strftime('%Y_%m_%d-%H_%M')
+    if os.name == 'nt':
+        base_path = 'Models\\%s\\' % time.strftime('%Y_%m_%d-%H_%M')
+    else:
+        base_path = 'Models/%s/' % time.strftime('%Y_%m_%d-%H_%M')
     if not os.path.exists(base_path):
         os.makedirs(base_path)
 
-    shutil.copy('config.py', '%s//config.py' % base_path)
+    shutil.copy('config.py', '%sconfig.py' % base_path)
 
     conf = config.conf
     word_dict = pkl.load(open(conf['brown__dict_file'], 'rb'))
@@ -227,7 +234,52 @@ def curriculum_model():
                                                                            softmax_bias,
                                                                            word2id,
                                                                            word_dict,
-                                                                           classes + 1)
+                                                                           classes)
+
+    model = create_language_model(conf, classes + 1, embedding_mat, softmax_mat, softmax_bias, lstm_weights)
+    train_language_model(model, conf, word_dict, classes, base_path)
+    print(test_language_model(model, conf, word_dict, classes))
+
+
+def continue_after_curriculum(path, iteration):
+
+    if os.name == 'nt':
+        base_path = 'Models\\%s\\' % time.strftime('%Y_%m_%d-%H_%M')
+    else:
+        base_path = 'Models/%s/' % time.strftime('%Y_%m_%d-%H_%M')
+    if not os.path.exists(base_path):
+        os.makedirs(base_path)
+
+    shutil.copy('config.py', '%s//config.py' % base_path)
+
+    conf = config.conf
+    model = keras.models.load_model(path)
+    word_dict = pkl.load(open(conf['brown__dict_file'], 'rb'))
+    word2cluster = general.read_brown_clusters(conf['brown__clusters_file'])
+    word2id, classes = general.create_cluster_dict(word2cluster, iteration+1)
+
+    valid_gen = brown_generator(conf['brown__valid_file'],
+                                conf['batch_size'],
+                                conf['max_len'],
+                                word2id,
+                                classes)
+
+    print(model.evaluate_generator(valid_gen, steps=conf['valid_steps'] / conf['batch_size']))
+
+    print(test_language_model(model, conf, word2id, classes))
+
+    embedding_mat = model.get_layer('Embedding').get_weights()[0]
+    softmax_mat, softmax_bias = model.get_layer('Softmax').get_weights()
+    lstm_weights = model.get_layer('LSTM').get_weights()
+
+    classes = len(word_dict) + 1
+
+    embedding_mat, softmax_mat, softmax_bias = general.expand_all_matrices(embedding_mat,
+                                                                           softmax_mat,
+                                                                           softmax_bias,
+                                                                           word2id,
+                                                                           word_dict,
+                                                                           classes)
 
     model = create_language_model(conf, classes + 1, embedding_mat, softmax_mat, softmax_bias, lstm_weights)
     train_language_model(model, conf, word_dict, classes, base_path)
@@ -237,4 +289,6 @@ def curriculum_model():
 if __name__ == '__main__':
     #baseline_model()
     curriculum_model()
+
+    #continue_after_curriculum('Models\\2018_02_22-16_45\\14\\model_03_4.27.hdf5', 14)
 
