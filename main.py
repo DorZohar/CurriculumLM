@@ -88,7 +88,7 @@ def train_language_model(model, conf, word2id, classes, base_path, is_curriculum
 
     if not is_curriculum:
         epochs = conf['epochs']
-        #earlyStop = keras.callbacks.EarlyStopping(patience=2)
+        earlyStop = keras.callbacks.EarlyStopping(patience=10)
         reduceLr = keras.callbacks.ReduceLROnPlateau(factor=0.5,
                                                      patience=3,
                                                      min_lr=conf['lstm__learn_rate'] * 0.25,
@@ -97,7 +97,8 @@ def train_language_model(model, conf, word2id, classes, base_path, is_curriculum
     else:
         epochs = conf['mini_epochs']
         earlyStop = keras.callbacks.EarlyStopping(patience=0, verbose=conf['verbose'])
-        callbacks.append(earlyStop)
+
+    callbacks.append(earlyStop)
 
     if not os.path.exists(base_path):
         os.makedirs(base_path)
