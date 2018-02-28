@@ -30,7 +30,7 @@ def threadsafe_generator(f):
 
 
 @threadsafe_generator
-def brown_generator(file_path, batch_size, max_len, word_dict, classes, is_test=False):
+def brown_generator(file_path, batch_size, max_len, input_word_dict, input_classes, output_word_dict, output_classes, is_test=False):
 
     batch_sentences = []
     batch_targets = []
@@ -39,9 +39,10 @@ def brown_generator(file_path, batch_size, max_len, word_dict, classes, is_test=
         with open(file_path, 'r') as file:
             for line in file:
                 line = line.strip('\n').split(' ')
-                line = [word_dict[word] if word in word_dict else classes for word in line]
-                batch_sentences.append(line)
-                batch_targets.append(line[1:] + [0])
+                input_line = [input_word_dict[word] if word in input_word_dict else input_classes for word in line]
+                output_line = [output_word_dict[word] if word in output_word_dict else output_classes for word in line]
+                batch_sentences.append(input_line)
+                batch_targets.append(output_line[1:] + [0])
                 i += 1
                 if i >= batch_size:
 

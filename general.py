@@ -33,24 +33,27 @@ def expand_embedding_matrix(old_matrix, old_idxs, new_idxs, classes, transpose=F
     return matrix
 
 
-def expand_all_matrices(embedding_mat, softmax_mat, softmax_bias, old_word2id, word2id, classes):
-    embedding_mat = expand_embedding_matrix(embedding_mat,
-                                            old_word2id,
-                                            word2id,
-                                            classes + 1,
-                                            False)
+def expand_all_matrices(embedding_mat, softmax_mat, softmax_bias, old_word2id, word2id, classes, conf):
 
-    softmax_mat = expand_embedding_matrix(softmax_mat,
-                                          old_word2id,
-                                          word2id,
-                                          classes + 1,
-                                          True)
+    if conf['curriculum__input']:
+        embedding_mat = expand_embedding_matrix(embedding_mat,
+                                                old_word2id,
+                                                word2id,
+                                                classes + 1,
+                                                False)
 
-    softmax_bias = expand_embedding_matrix(softmax_bias,
-                                           old_word2id,
-                                           word2id,
-                                           classes + 1,
-                                           False)
+    if conf['curriculum__output']:
+        softmax_mat = expand_embedding_matrix(softmax_mat,
+                                              old_word2id,
+                                              word2id,
+                                              classes + 1,
+                                              True)
+
+        softmax_bias = expand_embedding_matrix(softmax_bias,
+                                               old_word2id,
+                                               word2id,
+                                               classes + 1,
+                                               False)
 
     return embedding_mat, softmax_mat, softmax_bias
 

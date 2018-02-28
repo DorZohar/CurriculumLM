@@ -18,6 +18,9 @@ conf = {
     'lstm__activation': 'tanh',
     'lstm__learn_rate': 0.001,
 
+    'curriculum__input': False,
+    'curriculum__output': True,
+
     'w2v_path': "C:\\Wiki\\wiki.word2vec.bin",
     'model_paths': 'model_{epoch:02d}_{val_loss:.2f}.hdf5',
 
