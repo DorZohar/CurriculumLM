@@ -255,13 +255,16 @@ def curriculum_model():
                                       softmax_mat,
                                       softmax_bias,
                                       lstm_weights)
+
+        model_path = '%s\\%.2d\\' % (base_path, i) if os.name == 'nt' else '%s/%.2d/' % (base_path, i)
+
         train_language_model(model,
                              conf,
                              input_word2id,
                              input_classes,
                              output_word2id,
                              output_classes,
-                             '%s\\%.2d\\' % (base_path, i),
+                             model_path,
                              is_curriculum=True)
         print(test_language_model(model, conf, input_word2id, input_classes, output_word2id, output_classes))
 
