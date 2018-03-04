@@ -13,8 +13,8 @@ from generators import brown_generator
 import os
 
 
-def perplexity(y_true, y_pred):
-    return K.pow(K.constant(2.0), K.mean(K.sparse_categorical_crossentropy(y_true, y_pred)))
+# def perplexity(y_true, y_pred):
+#     return K.pow(K.constant(2.0), K.mean(K.sparse_categorical_crossentropy(y_true, y_pred)))
 
 
 def create_embedding_matrix(word_dict, word2vec):
@@ -61,7 +61,7 @@ def create_language_model(conf, input_classes, output_classes, embedding_mat=Non
     model.compile(optimizer=keras.optimizers.SGD(lr=conf['lstm__learn_rate']),
                   loss='sparse_categorical_crossentropy',
                   sample_weight_mode='temporal',
-                  weighted_metrics=['accuracy', perplexity])
+                  weighted_metrics=['accuracy'])
 
     if embedding_mat is not None:
         model.get_layer('Embedding').set_weights([embedding_mat])
