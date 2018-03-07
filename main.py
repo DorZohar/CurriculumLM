@@ -11,6 +11,7 @@ import keras.backend as K
 from gensim.models.keyedvectors import KeyedVectors
 from generators import brown_generator
 import os
+import tensorflow as tf
 
 
 # def perplexity(y_true, y_pred):
@@ -40,21 +41,23 @@ def create_language_model(conf, input_classes, output_classes, embedding_mat=Non
     if embedding_mat is not None:
         assert input_classes == embedding_mat.shape[0]
 
-    input_layer = keras.layers.Input((None, ), name='Input')
-    embedding_layer = keras.layers.Embedding(input_dim=input_classes,
-                                             output_dim=conf['lstm__embedding_size'],
-                                             name='Embedding')(input_layer)
+    with tf.device('/gpu:1'):
 
-    LSTM_layer = keras.layers.LSTM(conf['lstm__hidden_size'],
-                                   name='LSTM',
-                                   activation=conf['lstm__activation'],
-                                   recurrent_dropout=conf['lstm__rec_dropout'],
-                                   dropout=conf['lstm__input_dropout'],
-                                   return_sequences=True)(embedding_layer)
+        input_layer = keras.layers.Input((None, ), name='Input')
+        embedding_layer = keras.layers.Embedding(input_dim=input_classes,
+                                                 output_dim=conf['lstm__embedding_size'],
+                                                 name='Embedding')(input_layer)
 
-    output_layer = keras.layers.TimeDistributed(keras.layers.Dense(output_classes,
-                                                                   activation='softmax'),
-                                                name='Softmax')(LSTM_layer)
+        LSTM_layer = keras.layers.LSTM(conf['lstm__hidden_size'],
+                                       name='LSTM',
+                                       activation=conf['lstm__activation'],
+                                       recurrent_dropout=conf['lstm__rec_dropout'],
+                                       dropout=conf['lstm__input_dropout'],
+                                       return_sequences=True)(embedding_layer)
+
+        output_layer = keras.layers.TimeDistributed(keras.layers.Dense(output_classes,
+                                                                       activation='softmax'),
+                                                    name='Softmax')(LSTM_layer)
 
     model = keras.models.Model(input_layer, output_layer)
 
