@@ -17,8 +17,9 @@ conf = {
     'lstm__input_dropout': 0.2,
     'lstm__activation': 'tanh',
     'lstm__learn_rate': 0.001,
+    'lstm__momentum': 0.9,
 
-    'curriculum__input': False,
+    'curriculum__input': True,
     'curriculum__output': True,
 
     'w2v_path': "C:\\Wiki\\wiki.word2vec.bin",

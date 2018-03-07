@@ -58,7 +58,7 @@ def create_language_model(conf, input_classes, output_classes, embedding_mat=Non
 
     model = keras.models.Model(input_layer, output_layer)
 
-    model.compile(optimizer=keras.optimizers.SGD(lr=conf['lstm__learn_rate']),
+    model.compile(optimizer=keras.optimizers.SGD(lr=conf['lstm__learn_rate'], momentum=conf['lstm__momentum']),
                   loss='sparse_categorical_crossentropy',
                   sample_weight_mode='temporal',
                   weighted_metrics=['accuracy'])
