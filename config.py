@@ -18,6 +18,7 @@ conf = {
     'lstm__activation': 'tanh',
     'lstm__learn_rate': 0.001,
     'lstm__momentum': 0.9,
+    'lstm__sgd_optimizer': True,
     'lstm__limit_gpu': False,
     'lstm__gpu_id': 1,
 

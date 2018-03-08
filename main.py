@@ -94,7 +94,12 @@ def create_language_model(conf, input_classes, output_classes, embedding_mat=Non
 
     update_learnable_weights(model)
 
-    model.compile(optimizer=keras.optimizers.RMSprop(lr=conf['lstm__learn_rate']), #keras.optimizers.SGD(lr=conf['lstm__learn_rate'], momentum=conf['lstm__momentum']),
+    if conf['lstm__sgd_optimizer']:
+        optimizer = keras.optimizers.SGD(lr=conf['lstm__learn_rate'], momentum=conf['lstm__momentum'])
+    else:
+        optimizer = keras.optimizers.RMSprop(lr=conf['lstm__learn_rate'])
+
+    model.compile(optimizer=optimizer,
                   loss='sparse_categorical_crossentropy',
                   sample_weight_mode='temporal',
                   weighted_metrics=['accuracy', gradient_norm])
