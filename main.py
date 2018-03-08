@@ -2,7 +2,6 @@ import keras
 import time
 import sys
 
-import shutil
 import general
 import numpy as np
 import pickle as pkl
@@ -218,7 +217,7 @@ def baseline_model(conf):
     if not os.path.exists(base_path):
         os.makedirs(base_path)
 
-    shutil.copy('config.py', '%sconfig.py' % base_path)
+    general.create_config('%sconfig.py' % base_path, conf)
 
     word2vec = KeyedVectors.load_word2vec_format(conf['w2v_path'], binary=True)
     word_dict = pkl.load(open(conf['brown__dict_file'], 'rb'))
@@ -242,7 +241,7 @@ def curriculum_model(conf):
     if not os.path.exists(base_path):
         os.makedirs(base_path)
 
-    shutil.copy('config.py', '%sconfig.py' % base_path)
+        general.create_config('%sconfig.py' % base_path, conf)
 
     word_dict = pkl.load(open(conf['brown__dict_file'], 'rb'))
     word2cluster = general.read_brown_clusters(conf['brown__clusters_file'])
@@ -341,7 +340,7 @@ def continue_after_curriculum(path, iteration, conf):
     if not os.path.exists(base_path):
         os.makedirs(base_path)
 
-    shutil.copy('config.py', '%s//config.py' % base_path)
+    general.create_config('%sconfig.py' % base_path, conf)
 
     model = keras.models.load_model(path)
     word_dict = pkl.load(open(conf['brown__dict_file'], 'rb'))

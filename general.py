@@ -79,3 +79,14 @@ def load_config(path):
     spec.loader.exec_module(cfg)
 
     return cfg.conf
+
+
+def create_config(path, conf):
+
+    str_conf = str(conf)
+    str_conf = str_conf.replace(', ', ', \n    ')
+    str_conf = str_conf.replace('{', 'conf = {\n    ', 1)
+
+    with open(path, 'w') as f:
+        f.write(str_conf)
+
