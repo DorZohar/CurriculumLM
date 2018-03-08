@@ -382,8 +382,7 @@ if __name__ == '__main__':
 
     conf = general.load_config(cfg_path)
 
-    #baseline_model(conf)
-    curriculum_model(conf)
-
-    #continue_after_curriculum('Models\\2018_02_22-16_45\\14\\model_03_4.27.hdf5', 14, conf)
-
+    if not conf['curriculum__input'] and not conf['curriculum__output']:
+        baseline_model(conf)
+    else:
+        curriculum_model(conf)
