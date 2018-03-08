@@ -18,6 +18,19 @@ import tensorflow as tf
 #     return K.pow(K.constant(2.0), K.mean(K.sparse_categorical_crossentropy(y_true, y_pred)))
 
 
+learnable_vars = None
+
+
+def gradient_norm(y_true, y_pred):
+    loss = K.mean(K.sparse_categorical_crossentropy(y_true, y_pred))
+    grads = K.gradients(loss, learnable_vars)
+    grads_sum = K.constant(0)
+    for grad in grads:
+        grads_sum += K.sum(K.square(grad))
+
+    return K.sqrt(grads_sum)
+
+
 def create_embedding_matrix(word_dict, word2vec):
 
     classes = len(word_dict) + 2
@@ -31,6 +44,37 @@ def create_embedding_matrix(word_dict, word2vec):
     return matrix
 
 
+def model_struct(input_classes, output_classes, conf):
+    input_layer = keras.layers.Input((None,), name='Input')
+    embedding_layer = keras.layers.Embedding(input_dim=input_classes,
+                                             output_dim=conf['lstm__embedding_size'],
+                                             name='Embedding')(input_layer)
+
+    LSTM_layer = keras.layers.LSTM(conf['lstm__hidden_size'],
+                                   name='LSTM',
+                                   activation=conf['lstm__activation'],
+                                   recurrent_dropout=conf['lstm__rec_dropout'],
+                                   dropout=conf['lstm__input_dropout'],
+                                   return_sequences=True)(embedding_layer)
+
+    output_layer = keras.layers.TimeDistributed(keras.layers.Dense(output_classes,
+                                                                   activation='softmax'),
+                                                name='Softmax')(LSTM_layer)
+
+    return input_layer, output_layer
+
+
+def update_learnable_weights(model):
+    global learnable_vars
+
+    learnable_vars = []
+    for layer in model.layers:
+        if layer.trainable:
+            learnable_vars += layer.weights
+
+    return
+
+
 def create_language_model(conf, input_classes, output_classes, embedding_mat=None, softmax_mat=None, softmax_bias=None, lstm_weights=None):
 
     assert (softmax_mat is None) == (softmax_bias is None)
@@ -41,30 +85,22 @@ def create_language_model(conf, input_classes, output_classes, embedding_mat=Non
     if embedding_mat is not None:
         assert input_classes == embedding_mat.shape[0]
 
-    with tf.device('/gpu:1'):
-
-        input_layer = keras.layers.Input((None, ), name='Input')
-        embedding_layer = keras.layers.Embedding(input_dim=input_classes,
-                                                 output_dim=conf['lstm__embedding_size'],
-                                                 name='Embedding')(input_layer)
-
-        LSTM_layer = keras.layers.LSTM(conf['lstm__hidden_size'],
-                                       name='LSTM',
-                                       activation=conf['lstm__activation'],
-                                       recurrent_dropout=conf['lstm__rec_dropout'],
-                                       dropout=conf['lstm__input_dropout'],
-                                       return_sequences=True)(embedding_layer)
-
-        output_layer = keras.layers.TimeDistributed(keras.layers.Dense(output_classes,
-                                                                       activation='softmax'),
-                                                    name='Softmax')(LSTM_layer)
+    if conf['lstm__limit_gpu']:
+        with tf.device('/gpu:%d' % conf['lstm__gpu_id']):
+            input_layer, output_layer = model_struct(input_classes, output_classes, conf)
+    else:
+        input_layer, output_layer = model_struct(input_classes, output_classes, conf)
 
     model = keras.models.Model(input_layer, output_layer)
+
+    update_learnable_weights(model)
+
+    print(learnable_vars)
 
     model.compile(optimizer=keras.optimizers.SGD(lr=conf['lstm__learn_rate'], momentum=conf['lstm__momentum']),
                   loss='sparse_categorical_crossentropy',
                   sample_weight_mode='temporal',
-                  weighted_metrics=['accuracy'])
+                  weighted_metrics=['accuracy', gradient_norm])
 
     if embedding_mat is not None:
         model.get_layer('Embedding').set_weights([embedding_mat])
