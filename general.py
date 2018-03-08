@@ -1,4 +1,5 @@
 import numpy as np
+import importlib.util
 
 
 def read_brown_clusters(path):
@@ -71,3 +72,10 @@ def create_cluster_dict(word2cluster, level):
 
     return word2id, classes
 
+
+def load_config(path):
+    spec = importlib.util.spec_from_file_location("conf", path)
+    cfg = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(cfg)
+
+    return cfg.conf

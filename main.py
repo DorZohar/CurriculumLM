@@ -1,9 +1,8 @@
 import keras
 import time
+import sys
 
 import shutil
-
-import config
 import general
 import numpy as np
 import pickle as pkl
@@ -95,9 +94,7 @@ def create_language_model(conf, input_classes, output_classes, embedding_mat=Non
 
     update_learnable_weights(model)
 
-    print(learnable_vars)
-
-    model.compile(optimizer=keras.optimizers.SGD(lr=conf['lstm__learn_rate'], momentum=conf['lstm__momentum']),
+    model.compile(optimizer=keras.optimizers.RMSprop(lr=conf['lstm__learn_rate']), #keras.optimizers.SGD(lr=conf['lstm__learn_rate'], momentum=conf['lstm__momentum']),
                   loss='sparse_categorical_crossentropy',
                   sample_weight_mode='temporal',
                   weighted_metrics=['accuracy', gradient_norm])
@@ -204,7 +201,7 @@ def generate_sample(model, starting_word, word_dict, len=10):
     print("%s\n" % ' '.join(sentence))
 
 
-def baseline_model():
+def baseline_model(conf):
 
     np.random.seed(42)
 
@@ -218,7 +215,6 @@ def baseline_model():
 
     shutil.copy('config.py', '%sconfig.py' % base_path)
 
-    conf = config.conf
     word2vec = KeyedVectors.load_word2vec_format(conf['w2v_path'], binary=True)
     word_dict = pkl.load(open(conf['brown__dict_file'], 'rb'))
 
@@ -230,7 +226,7 @@ def baseline_model():
     print(test_language_model(model, conf, word_dict, len(word_dict) + 1, word_dict, len(word_dict) + 1))
 
 
-def curriculum_model():
+def curriculum_model(conf):
 
     np.random.seed(42)
 
@@ -243,7 +239,6 @@ def curriculum_model():
 
     shutil.copy('config.py', '%sconfig.py' % base_path)
 
-    conf = config.conf
     word_dict = pkl.load(open(conf['brown__dict_file'], 'rb'))
     word2cluster = general.read_brown_clusters(conf['brown__clusters_file'])
     embedding_mat = None
@@ -332,7 +327,7 @@ def curriculum_model():
     print(test_language_model(model, conf, word_dict, classes, word_dict, classes))
 
 
-def continue_after_curriculum(path, iteration):
+def continue_after_curriculum(path, iteration, conf):
 
     if os.name == 'nt':
         base_path = 'Models\\%s\\' % time.strftime('%Y_%m_%d-%H_%M')
@@ -343,7 +338,6 @@ def continue_after_curriculum(path, iteration):
 
     shutil.copy('config.py', '%s//config.py' % base_path)
 
-    conf = config.conf
     model = keras.models.load_model(path)
     word_dict = pkl.load(open(conf['brown__dict_file'], 'rb'))
     word2cluster = general.read_brown_clusters(conf['brown__clusters_file'])
@@ -380,8 +374,16 @@ def continue_after_curriculum(path, iteration):
 
 
 if __name__ == '__main__':
-    #baseline_model()
-    curriculum_model()
 
-    #continue_after_curriculum('Models\\2018_02_22-16_45\\14\\model_03_4.27.hdf5', 14)
+    if len(sys.argv) == 1:
+        cfg_path = 'config.py'
+    else:
+        cfg_path = sys.argv[1]
+
+    conf = general.load_config(cfg_path)
+
+    #baseline_model(conf)
+    curriculum_model(conf)
+
+    #continue_after_curriculum('Models\\2018_02_22-16_45\\14\\model_03_4.27.hdf5', 14, conf)
 
