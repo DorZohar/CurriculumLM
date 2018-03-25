@@ -43,7 +43,7 @@ def expand_all_matrices(embedding_mat, softmax_mat, softmax_bias, old_word2id, w
                                                 classes + 1,
                                                 False)
 
-    if conf['curriculum__output']:
+    if conf['curriculum__output'] and not conf['lstm__weight_tying']:
         softmax_mat = expand_embedding_matrix(softmax_mat,
                                               old_word2id,
                                               word2id,
