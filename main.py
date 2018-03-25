@@ -338,7 +338,8 @@ def curriculum_model(conf):
         print(test_language_model(model, conf, input_word2id, input_classes, output_word2id, output_classes))
 
         embedding_mat = model.get_layer('Embedding').get_weights()[0]
-        softmax_mat, softmax_bias = model.get_layer('Softmax').get_weights()
+        if not conf['lstm__weight_tying']:
+            softmax_mat, softmax_bias = model.get_layer('Softmax').get_weights()
         lstm_weights = model.get_layer('LSTM').get_weights()
 
     classes = len(word_dict) + 1
