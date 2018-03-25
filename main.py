@@ -19,6 +19,31 @@ import tensorflow as tf
 learnable_vars = None
 
 
+class CustomSoftmax(keras.layers.Layer):
+    def __init__(self, embeddingLayer, units, **kwargs):
+        self.W = K.transpose(embeddingLayer.weights[0])
+        self.b = None
+        self.units = units
+        self.activation = keras.activations.get('softmax')
+        super(CustomSoftmax, self).__init__(**kwargs)
+
+    def build(self, input_shape):
+        # Create a trainable weight variable for this layer.
+        self.b = self.add_weight(name='b',
+                                 shape=(self.units, ),
+                                 initializer='uniform',
+                                 trainable=True)
+        super(CustomSoftmax, self).build(input_shape)  # Be sure to call this somewhere!
+
+    def call(self, x):
+        output = K.dot(x, self.W)
+        output = K.bias_add(output, self.b)
+
+        return self.activation(output)
+
+    def compute_output_shape(self, input_shape):
+        return input_shape[0], self.units
+
 def gradient_norm(y_true, y_pred):
     loss = K.mean(K.sparse_categorical_crossentropy(y_true, y_pred))
     grads = K.gradients(loss, learnable_vars)
@@ -46,18 +71,24 @@ def model_struct(input_classes, output_classes, conf):
     input_layer = keras.layers.Input((None,), name='Input')
     embedding_layer = keras.layers.Embedding(input_dim=input_classes,
                                              output_dim=conf['lstm__embedding_size'],
-                                             name='Embedding')(input_layer)
+                                             name='Embedding')
+
+    next_layer = embedding_layer(input_layer)
 
     LSTM_layer = keras.layers.LSTM(conf['lstm__hidden_size'],
                                    name='LSTM',
                                    activation=conf['lstm__activation'],
                                    recurrent_dropout=conf['lstm__rec_dropout'],
                                    dropout=conf['lstm__input_dropout'],
-                                   return_sequences=True)(embedding_layer)
+                                   return_sequences=True)(next_layer)
 
-    output_layer = keras.layers.TimeDistributed(keras.layers.Dense(output_classes,
-                                                                   activation='softmax'),
-                                                name='Softmax')(LSTM_layer)
+    if conf['lstm__weight_tying']:
+        output_layer = keras.layers.TimeDistributed(CustomSoftmax(embedding_layer, units=output_classes),
+                                                    name='Softmax')(LSTM_layer)
+    else:
+        output_layer = keras.layers.TimeDistributed(keras.layers.Dense(output_classes,
+                                                                       activation='softmax'),
+                                                    name='Softmax')(LSTM_layer)
 
     return input_layer, output_layer
 
@@ -105,7 +136,7 @@ def create_language_model(conf, input_classes, output_classes, embedding_mat=Non
 
     if embedding_mat is not None:
         model.get_layer('Embedding').set_weights([embedding_mat])
-    if softmax_bias is not None:
+    if softmax_bias is not None and not conf['lstm__weight_tying']:
         model.get_layer('Softmax').set_weights([softmax_mat, softmax_bias])
     if lstm_weights is not None:
         model.get_layer('LSTM').set_weights(lstm_weights)

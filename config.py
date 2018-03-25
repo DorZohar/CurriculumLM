@@ -1,15 +1,15 @@
 
 
 conf = {
-    'brown__rare_word_count': 4,
+    'brown__rare_word_count': 100,
     'brown__dict_file': 'brown_corpus.pkl',
     'brown__train_file': 'brown_train.txt',
     'brown__valid_file': 'brown_valid.txt',
     'brown__test_file': 'brown_test.txt',
     'brown__clusters_file': 'brown_clusters.txt',
     'brown__file': 'brown.txt',
-    'brown__train_size': 800000,
-    'brown__valid_size': 200000,
+    'brown__train_size': 0.7,
+    'brown__valid_size': 0.15,
 
     'lstm__embedding_size': 300,
     'lstm__hidden_size': 300,
@@ -21,6 +21,7 @@ conf = {
     'lstm__sgd_optimizer': True,
     'lstm__limit_gpu': False,
     'lstm__gpu_id': 1,
+    'lstm__weight_tying': True,
 
     'curriculum__input': True,
     'curriculum__output': True,
