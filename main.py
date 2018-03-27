@@ -246,7 +246,7 @@ def test_language_model(model, conf, input_word2id, input_classes, output_word2i
                                      conf['max_len'],
                                      input_word2id,
                                      input_classes,
-                                     output_classes)
+                                     output_word2id)
 
     scores = model.evaluate_generator(test_gen,
                                       steps=conf['test_steps'] / conf['batch_size'])
