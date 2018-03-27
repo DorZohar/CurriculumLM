@@ -18,26 +18,29 @@ conf = {
     'lstm__activation': 'tanh',
     'lstm__learn_rate': 0.001,
     'lstm__momentum': 0.9,
-    'lstm__sgd_optimizer': True,
+    'lstm__sgd_optimizer': False,
     'lstm__limit_gpu': False,
     'lstm__gpu_id': 1,
-    'lstm__weight_tying': True,
+    'lstm__weight_tying': False,
 
     'curriculum__input': True,
-    'curriculum__output': True,
+    'curriculum__output': False,
 
     'w2v_path': "C:\\Wiki\\wiki.word2vec.bin",
     'model_paths': 'model_{epoch:02d}_{val_loss:.2f}.hdf5',
 
-    'batch_size': 100,
+    'batch_size': 50,
     'max_len': 40,
     'epochs': 50,
-    'mini_epochs': 5,
-    'train_steps': 34152,
-    'valid_steps': 10053,
-    'test_steps': 13137,
+    'mini_epochs': 10,
+    'train_steps': 4500,
+    'valid_steps': 500,
+    'test_steps': 1000,
     'workers': 4,
 
     'verbose': 1,
+
+    # Can be LM, POS, NER, CHNK
+    'task': 'POS',
 
 }

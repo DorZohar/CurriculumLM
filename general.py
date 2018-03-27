@@ -1,5 +1,7 @@
 import numpy as np
 import importlib.util
+import os
+from glob import glob
 
 
 def read_brown_clusters(path):
@@ -43,7 +45,7 @@ def expand_all_matrices(embedding_mat, softmax_mat, softmax_bias, old_word2id, w
                                                 classes + 1,
                                                 False)
 
-    if conf['curriculum__output'] and not conf['lstm__weight_tying']:
+    if conf['curriculum__output'] and not conf['lstm__weight_tying'] and conf['task'] == 'LM':
         softmax_mat = expand_embedding_matrix(softmax_mat,
                                               old_word2id,
                                               word2id,
@@ -71,6 +73,31 @@ def create_cluster_dict(word2cluster, level):
     word2id = {word: cluster2id[cluster] for word, cluster in word2cluster.items()}
 
     return word2id, classes
+
+
+def get_dataset_path(task, set):
+    if os.name == 'nt':
+        return 'Data\\%s_%s.txt' % (task, set)
+
+    return 'Data/%s_%s.txt' % (task, set)
+
+
+def extract_classes_dict(task):
+    classes = set()
+
+    if os.name == 'nt':
+        path = 'Data\\%s_*.txt' % task
+    else:
+        path = 'Data/%s_*.txt' % task
+
+    for file in glob(path):
+        with open(file, 'r') as f:
+            for line in f:
+                line_classes = [x.split('_')[1] for x in line.strip('\n').split(' ')]
+                classes = classes.union(line_classes)
+
+    return {c: idx for idx, c in enumerate(classes)}
+
 
 
 def load_config(path):
