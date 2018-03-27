@@ -89,7 +89,7 @@ def model_struct(input_classes, output_classes, conf):
                                    return_sequences=True)
 
     if conf['task'] != 'LM':
-        LSTM_layer = keras.layers.Bidirectional(LSTM_layer)
+        LSTM_layer = keras.layers.Bidirectional(LSTM_layer, name='LSTM')
 
     next_layer = LSTM_layer(next_layer)
 
@@ -147,7 +147,7 @@ def create_language_model(conf, input_classes, output_classes, embedding_mat=Non
 
     if embedding_mat is not None:
         model.get_layer('Embedding').set_weights([embedding_mat])
-    if softmax_bias is not None and not conf['lstm__weight_tying'] and conf['task'] == 'LM':
+    if softmax_bias is not None and not conf['lstm__weight_tying']:
         model.get_layer('Softmax').set_weights([softmax_mat, softmax_bias])
     if lstm_weights is not None:
         model.get_layer('LSTM').set_weights(lstm_weights)
