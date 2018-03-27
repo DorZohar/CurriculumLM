@@ -79,7 +79,6 @@ def model_struct(input_classes, output_classes, conf):
         uppercase_input_layer = keras.layers.Input((None, 1), name='UppercaseInput')
         next_layer = keras.layers.Concatenate()([next_layer, uppercase_input_layer])
         input_layer = [input_layer, uppercase_input_layer]
-        print(next_layer)
 
     LSTM_layer = keras.layers.LSTM(conf['lstm__hidden_size'],
                                    name='LSTM',
@@ -378,7 +377,7 @@ def curriculum_model(conf):
 
         model = create_language_model(conf,
                                       input_classes + 1,
-                                      output_classes + 1,
+                                      output_classes + 1 if conf['task'] == 'LM' else output_classes,
                                       embedding_mat,
                                       softmax_mat,
                                       softmax_bias,
@@ -401,7 +400,7 @@ def curriculum_model(conf):
             softmax_mat, softmax_bias = model.get_layer('Softmax').get_weights()
         lstm_weights = model.get_layer('LSTM').get_weights()
 
-    classes = len(task_dict) + 1
+    classes = len(word_dict) + 1
 
     embedding_mat, softmax_mat, softmax_bias = general.expand_all_matrices(embedding_mat,
                                                                            softmax_mat,
