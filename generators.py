@@ -30,11 +30,12 @@ def threadsafe_generator(f):
 
 
 @threadsafe_generator
-def brown_generator(file_path, batch_size, max_len, input_word_dict, input_classes, output_word_dict, output_classes, is_test=False):
+def brown_generator(file_path, batch_size, max_len, steps, input_word_dict, input_classes, output_word_dict, output_classes, is_test=False):
 
     batch_sentences = []
     batch_targets = []
     i = 0
+    total = 0
     while True:
         with open(file_path, 'r') as file:
             for line in file:
@@ -44,6 +45,7 @@ def brown_generator(file_path, batch_size, max_len, input_word_dict, input_class
                 batch_sentences.append(input_line)
                 batch_targets.append(output_line[1:] + [0])
                 i += 1
+                total += 1
                 if i >= batch_size:
 
                     sequences = keras.preprocessing.sequence.pad_sequences(batch_sentences,
@@ -69,15 +71,18 @@ def brown_generator(file_path, batch_size, max_len, input_word_dict, input_class
                     i = 0
                     batch_sentences = []
                     batch_targets = []
+                if total >= steps:
+                    break
 
 
 @threadsafe_generator
-def dataset_generator(file_path, batch_size, max_len, input_word_dict, input_classes, output_word_dict, is_test=False):
+def dataset_generator(file_path, batch_size, max_len, steps, input_word_dict, input_classes, output_word_dict, is_test=False):
 
     batch_sentences = []
     batch_uppercase = []
     batch_targets = []
     i = 0
+    total = 0
     while True:
         with open(file_path, 'r') as file:
             for line in file:
@@ -90,6 +95,7 @@ def dataset_generator(file_path, batch_size, max_len, input_word_dict, input_cla
                 batch_uppercase.append(uppercase_line)
                 batch_targets.append(output_line)
                 i += 1
+                total += 1
                 if i >= batch_size:
 
                     sequences = keras.preprocessing.sequence.pad_sequences(batch_sentences,
@@ -122,3 +128,6 @@ def dataset_generator(file_path, batch_size, max_len, input_word_dict, input_cla
                     batch_sentences = []
                     batch_uppercase = []
                     batch_targets = []
+                if total >= steps:
+                    print("Reopen file")
+                    break
