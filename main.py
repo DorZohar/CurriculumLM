@@ -160,6 +160,7 @@ def train_language_model(model, conf, input_word2id, input_classes, output_word2
         train_gen = brown_generator(conf['brown__train_file'],
                                     conf['batch_size'],
                                     conf['max_len'],
+                                    conf['train_steps'],
                                     input_word2id,
                                     input_classes,
                                     output_word2id,
@@ -168,6 +169,7 @@ def train_language_model(model, conf, input_word2id, input_classes, output_word2
         valid_gen = brown_generator(conf['brown__valid_file'],
                                     conf['batch_size'],
                                     conf['max_len'],
+                                    conf['valid_steps'],
                                     input_word2id,
                                     input_classes,
                                     output_word2id,
@@ -176,6 +178,7 @@ def train_language_model(model, conf, input_word2id, input_classes, output_word2
         train_gen = dataset_generator(general.get_dataset_path(conf['task'], 'train'),
                                       conf['batch_size'],
                                       conf['max_len'],
+                                      conf['train_steps'],
                                       input_word2id,
                                       input_classes,
                                       output_word2id)
@@ -183,6 +186,7 @@ def train_language_model(model, conf, input_word2id, input_classes, output_word2
         valid_gen = dataset_generator(general.get_dataset_path(conf['task'], 'valid'),
                                       conf['batch_size'],
                                       conf['max_len'],
+                                      conf['valid_steps'],
                                       input_word2id,
                                       input_classes,
                                       output_word2id)
@@ -237,6 +241,7 @@ def test_language_model(model, conf, input_word2id, input_classes, output_word2i
         test_gen = brown_generator(conf['brown__test_file'],
                                    conf['batch_size'],
                                    conf['max_len'],
+                                   conf['test_steps'],
                                    input_word2id,
                                    input_classes,
                                    output_word2id,
@@ -245,6 +250,7 @@ def test_language_model(model, conf, input_word2id, input_classes, output_word2i
         test_gen = dataset_generator(general.get_dataset_path(conf['task'], 'test'),
                                      conf['batch_size'],
                                      conf['max_len'],
+                                     conf['test_steps'],
                                      input_word2id,
                                      input_classes,
                                      output_word2id)
