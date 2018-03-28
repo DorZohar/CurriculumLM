@@ -193,10 +193,11 @@ def train_language_model(model, conf, input_word2id, input_classes, output_word2
 
     if not is_curriculum:
         epochs = conf['epochs']
-        earlyStop = keras.callbacks.EarlyStopping(patience=10, monitor=monitor)
-        reduceLr = keras.callbacks.ReduceLROnPlateau(factor=0.5,
-                                                     patience=3,
-                                                     min_lr=conf['lstm__learn_rate'] * 0.25,
+        earlyStop = keras.callbacks.EarlyStopping(patience=20, monitor=monitor)
+        reduceLr = keras.callbacks.ReduceLROnPlateau(factor=0.2,
+                                                     monitor=monitor,
+                                                     patience=10,
+                                                     min_lr=conf['lstm__learn_rate'] * 0.001,
                                                      verbose=conf['verbose'])
         callbacks.append(reduceLr)
     else:
@@ -211,8 +212,9 @@ def train_language_model(model, conf, input_word2id, input_classes, output_word2
     path = '%s%s' % (base_path, conf['model_paths'])
 
     checkpoint = keras.callbacks.ModelCheckpoint(path,
+                                                 monitor=monitor,
                                                  save_best_only=True,
-                                                 mode='min',
+                                                 mode='min' if conf['task'] == 'LM' else 'max',
                                                  verbose=conf['verbose'])
 
     callbacks.append(checkpoint)
@@ -341,7 +343,7 @@ def curriculum_model(conf):
         word2vec = KeyedVectors.load_word2vec_format(conf['w2v_path'], binary=True)
         embedding_mat = create_embedding_matrix(word_dict, word2vec)
 
-    for i in range(15):
+    for i in range(0, 15, 4):
 
         if i > 0:
             old_word2id = word2id
