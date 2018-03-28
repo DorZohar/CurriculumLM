@@ -82,8 +82,8 @@ def dataset_generator(file_path, batch_size, max_len, steps, input_word_dict, in
     batch_uppercase = []
     batch_targets = []
     i = 0
-    total = 0
     while True:
+        total = 0
         with open(file_path, 'r') as file:
             for line in file:
                 line = [(x.split('_')[0], x.split('_')[1]) for x in line.strip('\n').split(' ')]
