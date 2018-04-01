@@ -87,8 +87,8 @@ def model_struct(input_classes, output_classes, conf):
                                    dropout=conf['lstm__input_dropout'],
                                    return_sequences=True)
 
-    if conf['task'] != 'LM':
-        LSTM_layer = keras.layers.Bidirectional(LSTM_layer, name='LSTM')
+    # if conf['task'] != 'LM':
+    #     LSTM_layer = keras.layers.Bidirectional(LSTM_layer, name='LSTM')
 
     next_layer = LSTM_layer(next_layer)
 
@@ -306,11 +306,12 @@ def baseline_model(conf, base_model=None):
         lstm_weights = None
     else:
         embedding_mat = base_model.get_layer('Embedding').get_weights()[0]
-        if not conf['lstm__weight_tying']:
-            softmax_mat, softmax_bias = base_model.get_layer('Softmax').get_weights()
-        else:
-            softmax_mat, softmax_bias = None, None
+        # if not conf['lstm__weight_tying']:
+        #     softmax_mat, softmax_bias = base_model.get_layer('Softmax').get_weights()
+        # else:
+        softmax_mat, softmax_bias = None, None
         lstm_weights = base_model.get_layer('LSTM').get_weights()
+        lstm_weights[0] = np.pad(lstm_weights[0], [[0, 1], [0, 0]], mode='constant')
 
     classes = len(word_dict) + 1
 

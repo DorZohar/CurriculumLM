@@ -23,7 +23,7 @@ conf = {
     'lstm__gpu_id': 1,
     'lstm__weight_tying': False,
 
-    'curriculum__input': True,
+    'curriculum__input': False,
     'curriculum__output': False,
     'curriculum__start': 0,
     'curriculum__stop': 15,
@@ -34,9 +34,9 @@ conf = {
 
     'batch_size': 50,
     'max_len': 40,
-    'epochs': 50,
+    'epochs': 1, # 50
     'mini_epochs': 10,
-    'train_steps': 4500,
+    'train_steps': 450,
     'valid_steps': 500,
     'test_steps': 1000,
     'workers': 4,
