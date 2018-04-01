@@ -34,9 +34,9 @@ conf = {
 
     'batch_size': 50,
     'max_len': 40,
-    'epochs': 1, # 50
+    'epochs': 50,
     'mini_epochs': 10,
-    'train_steps': 450,
+    'train_steps': 4500,
     'valid_steps': 500,
     'test_steps': 1000,
     'workers': 4,

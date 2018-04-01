@@ -8,6 +8,9 @@ def train_task_after_curriculum(conf):
 
     lm_conf = dict(conf)
     lm_conf['task'] = 'LM'
+    lm_conf['train_steps'] = 34152
+    lm_conf['valid_steps'] = 10053
+    lm_conf['test_steps'] = 13137
 
     if not lm_conf['curriculum__input'] and not lm_conf['curriculum__output']:
         model = main.baseline_model(lm_conf)
