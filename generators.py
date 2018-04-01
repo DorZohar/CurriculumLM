@@ -35,8 +35,8 @@ def brown_generator(file_path, batch_size, max_len, steps, input_word_dict, inpu
     batch_sentences = []
     batch_targets = []
     i = 0
-    total = 0
     while True:
+        total = 0
         with open(file_path, 'r') as file:
             for line in file:
                 line = line.strip('\n').split(' ')
