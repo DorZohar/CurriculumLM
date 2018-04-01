@@ -25,6 +25,9 @@ conf = {
 
     'curriculum__input': True,
     'curriculum__output': False,
+    'curriculum__start': 0,
+    'curriculum__stop': 15,
+    'curriculum__jumps': 2,
 
     'w2v_path': "C:\\Wiki\\wiki.word2vec.bin",
     'model_paths': 'model_{epoch:02d}_{val_loss:.2f}.hdf5',

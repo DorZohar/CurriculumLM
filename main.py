@@ -279,7 +279,7 @@ def generate_sample(model, starting_word, word_dict, len=10):
     print("%s\n" % ' '.join(sentence))
 
 
-def baseline_model(conf):
+def baseline_model(conf, base_model=None):
 
     np.random.seed(42)
 
@@ -299,10 +299,28 @@ def baseline_model(conf):
     word2vec = KeyedVectors.load_word2vec_format(conf['w2v_path'], binary=True)
     word_dict = pkl.load(open(conf['brown__dict_file'], 'rb'))
 
-    embedding_mat = create_embedding_matrix(word_dict, word2vec)
+    if base_model is None:
+        embedding_mat = create_embedding_matrix(word_dict, word2vec)
+        softmax_mat = None
+        softmax_bias = None
+        lstm_weights = None
+    else:
+        embedding_mat = base_model.get_layer('Embedding').get_weights()[0]
+        if not conf['lstm__weight_tying']:
+            softmax_mat, softmax_bias = base_model.get_layer('Softmax').get_weights()
+        else:
+            softmax_mat, softmax_bias = None, None
+        lstm_weights = base_model.get_layer('LSTM').get_weights()
+
     classes = len(word_dict) + 1
 
-    model = create_language_model(conf, classes + 1, classes + 1, embedding_mat)
+    model = create_language_model(conf,
+                                  classes + 1,
+                                  classes + 1 if conf['task'] == 'LM' else len(task_dict),
+                                  embedding_mat,
+                                  softmax_mat,
+                                  softmax_bias,
+                                  lstm_weights)
     train_language_model(model,
                          conf,
                          word_dict,
@@ -316,6 +334,8 @@ def baseline_model(conf):
                               len(word_dict) + 1,
                               word_dict if conf['task'] == 'LM' else task_dict,
                               classes if conf['task'] == 'LM' else len(task_dict)))
+
+    return model
 
 
 def curriculum_model(conf):
@@ -349,7 +369,7 @@ def curriculum_model(conf):
         word2vec = KeyedVectors.load_word2vec_format(conf['w2v_path'], binary=True)
         embedding_mat = create_embedding_matrix(word_dict, word2vec)
 
-    for i in range(0, 15, 4):
+    for i in range(conf['curriculum__start'], conf['curriculum__stop'], conf['curriculum__jumps']):
 
         if i > 0:
             old_word2id = word2id
@@ -438,6 +458,8 @@ def curriculum_model(conf):
                               classes,
                               word_dict if conf['task'] == 'LM' else task_dict,
                               classes if conf['task'] == 'LM' else len(task_dict)))
+
+    return model
 
 #
 # def continue_after_curriculum(path, iteration, conf):
