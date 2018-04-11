@@ -4,6 +4,7 @@
 """
 import logging
 import numpy as np
+from time import time
 from sklearn.cluster import AgglomerativeClustering, KMeans
 from .datasets.similarity import fetch_MEN, fetch_WS353, fetch_SimLex999, fetch_MTurk, fetch_RG65, fetch_RW
 from .datasets.categorization import fetch_AP, fetch_battig, fetch_BLESS, fetch_ESSLI_1a, fetch_ESSLI_2b, \
@@ -13,6 +14,7 @@ from six import iteritems
 from EvaluateW2V.embedding import Embedding
 
 logger = logging.getLogger(__name__)
+
 
 def calculate_purity(y_true, y_pred):
     """
@@ -84,8 +86,8 @@ def evaluate_categorization(w, X, y, method="all", seed=None):
 
     assert method in ["all", "kmeans", "agglomerative"], "Uncrecognized method"
 
-    mean_vector = np.mean(w.syn0, axis=0, keepdims=True)
-    words = np.vstack(w[word] - mean_vector for word in X.flatten())
+    mean_vector = np.mean(w.vectors, axis=0, keepdims=True)
+    words = np.vstack(w.get(word, mean_vector) for word in X.flatten())
     ids = np.random.RandomState(seed).choice(range(len(X)), len(X), replace=False)
 
     # Evaluate clustering on several hyperparameters of AgglomerativeClustering and
@@ -140,12 +142,12 @@ def evaluate_on_semeval_2012_2(w):
     for c in categories:
         # Get mean of left and right vector
         prototypes = data.X_prot[c]
-        prot_left = np.mean(np.vstack(w[word] - mean_vector for word in prototypes[:, 0]), axis=0)
-        prot_right = np.mean(np.vstack(w[word] - mean_vector for word in prototypes[:, 1]), axis=0)
+        prot_left = np.mean(np.vstack(w.get(word, mean_vector) for word in prototypes[:, 0]), axis=0)
+        prot_right = np.mean(np.vstack(w.get(word, mean_vector) for word in prototypes[:, 1]), axis=0)
 
         questions = data.X[c]
-        question_left, question_right = np.vstack(w[word] - mean_vector for word in questions[:, 0]), \
-                                        np.vstack(w[word] - mean_vector for word in questions[:, 1])
+        question_left, question_right = np.vstack(w.get(word, mean_vector) for word in questions[:, 0]), \
+                                        np.vstack(w.get(word, mean_vector) for word in questions[:, 1])
 
         scores = np.dot(prot_left - prot_right, (question_left - question_right).T)
 
@@ -323,7 +325,7 @@ def evaluate_similarity(w, X, y):
         w = Embedding.from_dict(w)
 
     missing_words = 0
-    words = w.vocab
+    words = w.vocabulary.word_id
     for query in X:
         for query_word in query:
             if query_word not in words:
@@ -332,9 +334,9 @@ def evaluate_similarity(w, X, y):
         logger.warning("Missing {} words. Will replace them with mean vector".format(missing_words))
 
 
-    mean_vector = np.mean(w.syn0, axis=0, keepdims=True)
-    A = np.vstack(w[word] - mean_vector for word in X[:, 0])
-    B = np.vstack(w[word] - mean_vector for word in X[:, 1])
+    mean_vector = np.mean(w.vectors, axis=0, keepdims=True)
+    A = np.vstack(w.get(word, mean_vector) for word in X[:, 0])
+    B = np.vstack(w.get(word, mean_vector) for word in X[:, 1])
     scores = np.array([v1.dot(v2.T)/(np.linalg.norm(v1)*np.linalg.norm(v2)) for v1, v2 in zip(A, B)])
     return scipy.stats.spearmanr(scores, y).correlation
 
@@ -353,6 +355,8 @@ def evaluate_on_all(w):
     results: pandas.DataFrame
       DataFrame with results, one per column.
     """
+
+    logger.setLevel('DEBUG')
     if isinstance(w, dict):
         w = Embedding.from_dict(w)
 
@@ -385,8 +389,10 @@ def evaluate_on_all(w):
     analogy_results = {}
 
     for name, data in iteritems(analogy_tasks):
+        t = time()
         analogy_results[name] = evaluate_analogy(w, data.X, data.y)
         logger.info("Analogy prediction accuracy on {} {}".format(name, analogy_results[name]))
+        print(time() - t)
 
     analogy_results["SemEval2012_2"] = evaluate_on_semeval_2012_2(w)['all']
     logger.info("Analogy prediction accuracy on {} {}".format("SemEval2012", analogy_results["SemEval2012_2"]))

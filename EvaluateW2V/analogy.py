@@ -83,7 +83,7 @@ class SimpleAnalogySolver(sklearn.base.BaseEstimator):
         w = self.w.most_frequent(self.k) if self.k else self.w
         words = self.w.vocabulary.words
         word_id = self.w.vocabulary.word_id
-        mean_vector = np.mean(w.syn0, axis=0)
+        mean_vector = np.mean(w.vectors, axis=0)
         output = []
 
         missing_words = 0
@@ -102,16 +102,16 @@ class SimpleAnalogySolver(sklearn.base.BaseEstimator):
                 logger.info("Processing {}/{} batch".format(int(np.ceil(ids[1] / float(self.batch_size))),
                                                             int(np.ceil(X.shape[0] / float(self.batch_size)))))
 
-            A, B, C = np.vstack(w[word] - mean_vector for word in X_b[:, 0]), \
-                      np.vstack(w[word] - mean_vector for word in X_b[:, 1]), \
-                      np.vstack(w[word] - mean_vector for word in X_b[:, 2])
+            A, B, C = np.vstack(w.get(word, mean_vector) for word in X_b[:, 0]), \
+                      np.vstack(w.get(word, mean_vector) for word in X_b[:, 1]), \
+                      np.vstack(w.get(word, mean_vector) for word in X_b[:, 2])
 
             if self.method == "add":
-                D = np.dot(w.syn0, (B - A + C).T)
+                D = np.dot(w.vectors, (B - A + C).T)
             elif self.method == "mul":
-                D_A = np.log((1.0 + np.dot(w.syn0, A.T)) / 2.0 + 1e-5)
-                D_B = np.log((1.0 + np.dot(w.syn0, B.T)) / 2.0 + 1e-5)
-                D_C = np.log((1.0 + np.dot(w.syn0, C.T)) / 2.0 + 1e-5)
+                D_A = np.log((1.0 + np.dot(w.vectors, A.T)) / 2.0 + 1e-5)
+                D_B = np.log((1.0 + np.dot(w.vectors, B.T)) / 2.0 + 1e-5)
+                D_C = np.log((1.0 + np.dot(w.vectors, C.T)) / 2.0 + 1e-5)
                 D = D_B - D_A + D_C
             else:
                 raise RuntimeError("Unrecognized method parameter")
