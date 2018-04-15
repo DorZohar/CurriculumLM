@@ -1,6 +1,6 @@
 import multiprocessing
 import sys
-
+import pickle as pkl
 import itertools
 from time import time
 
@@ -41,7 +41,7 @@ def train_word2vec(input_file):
         'min_count': 10,
         'workers': max(1, multiprocessing.cpu_count() - 1),
         'sample': 1E-5,
-        'iter': 100,
+        'iter': 20,
     }
 
     word2vec = Word2Vec(LineSentence(input_file, max_sentence_length=max_length),
@@ -127,7 +127,7 @@ def train_curriculum_word2vec(input_file, clusters_file, conf):
         'iter': 1,
     }
 
-    for i in range(2):
+    for i in range(15):
         start = time()
         # Create w2v model
         print("Iteration %d" % i)
@@ -150,6 +150,7 @@ def train_curriculum_word2vec(input_file, clusters_file, conf):
         old_len = i + 1
         print("Iteration %d finished after %s seconds" % (i, time() - start))
 
+    t = time()
     word2vec = Word2Vec(**params)
     word2vec.build_vocab(LineSentence(input_file, max_sentence_length=max_length))
     word2vec = expand_word2vec_matrix(word2vec,
@@ -157,12 +158,14 @@ def train_curriculum_word2vec(input_file, clusters_file, conf):
                                       word2cluster,
                                       old_len)
 
-    params['iter'] = 5
+    params['iter'] = 15
     word2vec.train(LineSentence(input_file, max_sentence_length=max_length),
                    total_examples=word2vec.corpus_count,
                    epochs=word2vec.iter,
                    start_alpha=word2vec.alpha,
                    end_alpha=word2vec.min_alpha)
+
+    print("Training final model finished after %d seconds" % (time() - t))
 
     return word2vec
 
@@ -186,5 +189,6 @@ if __name__ == '__main__':
 
     input_path, output_path = sys.argv[1:3]
 
-    w2v = train_curriculum_word2vec(input_path, conf['brown__clusters_file'], conf)
+    #w2v = train_curriculum_word2vec(input_path, 'brown_clusters.txt', conf)
+    w2v = train_word2vec(input_path)
     w2v.wv.save_word2vec_format(output_path, binary=True)
