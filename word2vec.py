@@ -183,12 +183,16 @@ if __name__ == '__main__':
 
     #conf = general.load_config(cfg_path)
 
-    if len(sys.argv) < 2:
+    if len(sys.argv) < 3:
         print(globals()['__doc__'] % locals())
         sys.exit(1)
 
-    input_path, output_path = sys.argv[1:3]
+    input_path, output_path, curriculum = sys.argv[1:4]
 
-    #w2v = train_curriculum_word2vec(input_path, 'brown_clusters.txt', conf)
-    w2v = train_word2vec(input_path)
+    if curriculum == '1':
+        w2v = train_curriculum_word2vec(input_path, 'brown_clusters_wiki.txt', conf)
+    else:
+        print("Regular word2vec")
+        w2v = train_word2vec(input_path)
     w2v.wv.save_word2vec_format(output_path, binary=True)
+
