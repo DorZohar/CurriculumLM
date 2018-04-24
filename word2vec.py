@@ -4,6 +4,7 @@ import pickle as pkl
 import itertools
 from time import time
 
+from collections import defaultdict
 from gensim import utils
 from gensim.models import Word2Vec
 from gensim.models.word2vec import LineSentence
@@ -12,6 +13,7 @@ import general
 from EvaluateW2V.evaluate import evaluate_on_all
 from gensim.models.keyedvectors import KeyedVectors
 from config import conf
+
 
 def cluster_to_string(cluster, i):
     return "#CLUSTER_%s#" % cluster[:i]
@@ -103,6 +105,26 @@ def expand_word2vec_matrix(word2vec, old_word2vec, word2cluster, old_len):
     return word2vec
 
 
+def build_curriculum_vocab(vocab, clusters_dict, prefix):
+
+    total_words = 0
+    new_vocab = defaultdict(int)
+
+    for word, count in vocab.items():
+        if word not in clusters_dict:
+            total_words += 1
+            new_vocab[word] = vocab[word]
+        else:
+            cluster_str = cluster_to_string(clusters_dict[word], prefix)
+            if cluster_str in new_vocab:
+                new_vocab[cluster_str] += vocab[word]
+            else:
+                total_words += 1
+                new_vocab[cluster_str] = vocab[word]
+
+    return new_vocab
+
+
 def train_curriculum_word2vec(input_file, clusters_file, conf):
 
     # max_length = 0
@@ -118,22 +140,36 @@ def train_curriculum_word2vec(input_file, clusters_file, conf):
     old_len = None
     word2cluster = general.read_brown_clusters(clusters_file)
 
+    curriculum_epochs = 1
+    curriculum_stages = 15
+    w2v_epochs = 20
+
     params = {
         'size': 300,
         'window': 10,
         'min_count': 10,
         'workers': max(1, multiprocessing.cpu_count() - 1),
         'sample': 1E-5,
-        'iter': 1,
+        'iter': w2v_epochs,
     }
 
-    for i in range(15):
+    final_word2vec = Word2Vec(**params)
+    final_word2vec.scan_vocab(LineSentence(input_file, max_sentence_length=max_length))
+
+    params['iter'] = curriculum_epochs
+
+    for i in range(curriculum_stages):
         start = time()
         # Create w2v model
         print("Iteration %d" % i)
         word2vec = Word2Vec(**params)
         iterator = CurriculumIter(input_file, word2cluster, i + 1, max_length)
-        word2vec.build_vocab(iterator)
+
+        word2vec.raw_vocab = build_curriculum_vocab(final_word2vec.raw_vocab, word2cluster, i + 1)
+        word2vec.corpus_count = final_word2vec.corpus_count
+        word2vec.scale_vocab()
+        word2vec.finalize_vocab()
+
         if i > 0:
             word2vec = expand_word2vec_matrix(word2vec,
                                               old_word2vec,
@@ -148,26 +184,25 @@ def train_curriculum_word2vec(input_file, clusters_file, conf):
                        )
         old_word2vec = word2vec
         old_len = i + 1
-        print("Iteration %d finished after %s seconds" % (i, time() - start))
+        print("Iteration %d finished after %.2f seconds" % (i, time() - start))
 
     t = time()
-    word2vec = Word2Vec(**params)
-    word2vec.build_vocab(LineSentence(input_file, max_sentence_length=max_length))
-    word2vec = expand_word2vec_matrix(word2vec,
-                                      old_word2vec,
-                                      word2cluster,
-                                      old_len)
+    final_word2vec.scale_vocab()
+    final_word2vec.finalize_vocab()
+    final_word2vec = expand_word2vec_matrix(final_word2vec,
+                                            old_word2vec,
+                                            word2cluster,
+                                            old_len)
 
-    params['iter'] = 15
-    word2vec.train(LineSentence(input_file, max_sentence_length=max_length),
-                   total_examples=word2vec.corpus_count,
-                   epochs=word2vec.iter,
-                   start_alpha=word2vec.alpha,
-                   end_alpha=word2vec.min_alpha)
+    final_word2vec.train(LineSentence(input_file, max_sentence_length=max_length),
+                         total_examples=final_word2vec.corpus_count,
+                         epochs=final_word2vec.iter,
+                         start_alpha=final_word2vec.alpha,
+                         end_alpha=final_word2vec.min_alpha)
 
-    print("Training final model finished after %d seconds" % (time() - t))
+    print("Training final model finished after %.2f seconds" % (time() - t))
 
-    return word2vec
+    return final_word2vec
 
 
 
