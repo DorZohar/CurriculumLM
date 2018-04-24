@@ -143,6 +143,12 @@ def train_curriculum_word2vec(input_file, clusters_file, conf):
     curriculum_epochs = 1
     curriculum_stages = 15
     w2v_epochs = 20
+    start_alpha = 0.025
+    end_alpha = 0.0001
+
+    total_epochs = curriculum_stages * curriculum_epochs + w2v_epochs
+    alpha_per_epoch = (start_alpha - end_alpha) / total_epochs
+    cur_alpha = start_alpha
 
     params = {
         'size': 300,
@@ -179,9 +185,10 @@ def train_curriculum_word2vec(input_file, clusters_file, conf):
         word2vec.train(iterator,
                        total_examples=word2vec.corpus_count,
                        epochs=word2vec.iter,
-                       start_alpha=word2vec.alpha,
-                       end_alpha=word2vec.min_alpha
+                       start_alpha=cur_alpha,
+                       end_alpha=(cur_alpha - alpha_per_epoch * curriculum_epochs)
                        )
+        cur_alpha -= alpha_per_epoch * curriculum_epochs
         old_word2vec = word2vec
         old_len = i + 1
         print("Iteration %d finished after %.2f seconds" % (i, time() - start))
@@ -194,11 +201,13 @@ def train_curriculum_word2vec(input_file, clusters_file, conf):
                                             word2cluster,
                                             old_len)
 
+    print(cur_alpha)
+
     final_word2vec.train(LineSentence(input_file, max_sentence_length=max_length),
                          total_examples=final_word2vec.corpus_count,
                          epochs=final_word2vec.iter,
-                         start_alpha=final_word2vec.alpha,
-                         end_alpha=final_word2vec.min_alpha)
+                         start_alpha=cur_alpha,
+                         end_alpha=end_alpha)
 
     print("Training final model finished after %.2f seconds" % (time() - t))
 
