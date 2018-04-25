@@ -160,7 +160,8 @@ def train_curriculum_word2vec(input_file, clusters_file, conf):
     }
 
     final_word2vec = Word2Vec(**params)
-    final_word2vec.scan_vocab(LineSentence(input_file, max_sentence_length=max_length))
+    total_words, corpus_count = final_word2vec.vocabulary.scan_vocab(LineSentence(input_file, max_sentence_length=max_length))
+    final_word2vec.corpus_count = corpus_count
 
     params['iter'] = curriculum_epochs
 
@@ -171,10 +172,15 @@ def train_curriculum_word2vec(input_file, clusters_file, conf):
         word2vec = Word2Vec(**params)
         iterator = CurriculumIter(input_file, word2cluster, i + 1, max_length)
 
-        word2vec.raw_vocab = build_curriculum_vocab(final_word2vec.raw_vocab, word2cluster, i + 1)
+        word2vec.vocabulary.raw_vocab = build_curriculum_vocab(final_word2vec.vocabulary.raw_vocab, word2cluster, i + 1)
         word2vec.corpus_count = final_word2vec.corpus_count
-        word2vec.scale_vocab()
-        word2vec.finalize_vocab()
+        word2vec.vocabulary.prepare_vocab(word2vec.hs,
+                                          word2vec.negative,
+                                          word2vec.wv)
+        word2vec.trainables.prepare_weights(word2vec.hs,
+                                            word2vec.negative,
+                                            word2vec.wv,
+                                            vocabulary=word2vec.vocabulary)
 
         if i > 0:
             word2vec = expand_word2vec_matrix(word2vec,
@@ -194,14 +200,17 @@ def train_curriculum_word2vec(input_file, clusters_file, conf):
         print("Iteration %d finished after %.2f seconds" % (i, time() - start))
 
     t = time()
-    final_word2vec.scale_vocab()
-    final_word2vec.finalize_vocab()
+    final_word2vec.vocabulary.prepare_vocab(final_word2vec.hs,
+                                            final_word2vec.negative,
+                                            final_word2vec.wv)
+    final_word2vec.trainables.prepare_weights(final_word2vec.hs,
+                                                         final_word2vec.negative,
+                                                         final_word2vec.wv,
+                                                         vocabulary=final_word2vec.vocabulary)
     final_word2vec = expand_word2vec_matrix(final_word2vec,
                                             old_word2vec,
                                             word2cluster,
                                             old_len)
-
-    print(cur_alpha)
 
     final_word2vec.train(LineSentence(input_file, max_sentence_length=max_length),
                          total_examples=final_word2vec.corpus_count,
