@@ -139,7 +139,7 @@ def train_curriculum_word2vec(input_file, clusters_file, conf):
     old_len = None
     word2cluster = general.read_brown_clusters(clusters_file)
 
-    total_epochs = (conf['curriculum_end'] - conf['curriculum_start']) // conf['curriculum_step'] * conf['urriculum_epochs'] + conf['w2v_epochs']
+    total_epochs = (conf['curriculum_end'] - conf['curriculum_start']) // conf['curriculum_step'] * conf['curriculum_epochs'] + conf['w2v_epochs']
     alpha_per_epoch = (conf['start_alpha'] - conf['end_alpha']) / total_epochs
     cur_alpha = conf['start_alpha']
 
@@ -175,7 +175,7 @@ def train_curriculum_word2vec(input_file, clusters_file, conf):
                                             word2vec.wv,
                                             vocabulary=word2vec.vocabulary)
 
-        if i > 0:
+        if old_word2vec is not None:
             word2vec = expand_word2vec_matrix(word2vec,
                                               old_word2vec,
                                               word2cluster,
