@@ -12,7 +12,6 @@ from gensim.models.word2vec import LineSentence
 import general
 from EvaluateW2V.evaluate import evaluate_on_all
 from gensim.models.keyedvectors import KeyedVectors
-from config import conf
 
 
 def cluster_to_string(cluster, i):
@@ -140,15 +139,9 @@ def train_curriculum_word2vec(input_file, clusters_file, conf):
     old_len = None
     word2cluster = general.read_brown_clusters(clusters_file)
 
-    curriculum_epochs = 1
-    curriculum_stages = 15
-    w2v_epochs = 20
-    start_alpha = 0.025
-    end_alpha = 0.0001
-
-    total_epochs = curriculum_stages * curriculum_epochs + w2v_epochs
-    alpha_per_epoch = (start_alpha - end_alpha) / total_epochs
-    cur_alpha = start_alpha
+    total_epochs = (conf['curriculum_end'] - conf['curriculum_start']) // conf['curriculum_step'] * conf['urriculum_epochs'] + conf['w2v_epochs']
+    alpha_per_epoch = (conf['start_alpha'] - conf['end_alpha']) / total_epochs
+    cur_alpha = conf['start_alpha']
 
     params = {
         'size': 300,
@@ -156,16 +149,16 @@ def train_curriculum_word2vec(input_file, clusters_file, conf):
         'min_count': 10,
         'workers': max(1, multiprocessing.cpu_count() - 1),
         'sample': 1E-5,
-        'iter': w2v_epochs,
+        'iter': conf['w2v_epochs'],
     }
 
     final_word2vec = Word2Vec(**params)
     total_words, corpus_count = final_word2vec.vocabulary.scan_vocab(LineSentence(input_file, max_sentence_length=max_length))
     final_word2vec.corpus_count = corpus_count
 
-    params['iter'] = curriculum_epochs
+    params['iter'] = conf['curriculum_epochs']
 
-    for i in range(curriculum_stages):
+    for i in range(conf['curriculum_start'], conf['curriculum_end'], conf['curriculum_step']):
         start = time()
         # Create w2v model
         print("Iteration %d" % i)
@@ -192,9 +185,9 @@ def train_curriculum_word2vec(input_file, clusters_file, conf):
                        total_examples=word2vec.corpus_count,
                        epochs=word2vec.iter,
                        start_alpha=cur_alpha,
-                       end_alpha=(cur_alpha - alpha_per_epoch * curriculum_epochs)
+                       end_alpha=(cur_alpha - alpha_per_epoch * conf['curriculum_epochs'])
                        )
-        cur_alpha -= alpha_per_epoch * curriculum_epochs
+        cur_alpha -= alpha_per_epoch * conf['curriculum_epochs']
         old_word2vec = word2vec
         old_len = i + 1
         print("Iteration %d finished after %.2f seconds" % (i, time() - start))
@@ -204,9 +197,9 @@ def train_curriculum_word2vec(input_file, clusters_file, conf):
                                             final_word2vec.negative,
                                             final_word2vec.wv)
     final_word2vec.trainables.prepare_weights(final_word2vec.hs,
-                                                         final_word2vec.negative,
-                                                         final_word2vec.wv,
-                                                         vocabulary=final_word2vec.vocabulary)
+                                              final_word2vec.negative,
+                                              final_word2vec.wv,
+                                              vocabulary=final_word2vec.vocabulary)
     final_word2vec = expand_word2vec_matrix(final_word2vec,
                                             old_word2vec,
                                             word2cluster,
@@ -216,13 +209,22 @@ def train_curriculum_word2vec(input_file, clusters_file, conf):
                          total_examples=final_word2vec.corpus_count,
                          epochs=final_word2vec.iter,
                          start_alpha=cur_alpha,
-                         end_alpha=end_alpha)
+                         end_alpha=conf['end_alpha'])
 
     print("Training final model finished after %.2f seconds" % (time() - t))
 
     return final_word2vec
 
 
+def w2v_curriculum_filename(curriculum, conf):
+
+    if curriculum == '1':
+        return "curriculum_w2v_%d_%d_%d_%depochs.bin" % (conf['curriculum_start'],
+                                                         conf['curriculum_end'],
+                                                         conf['curriculum_step'],
+                                                         conf['w2v_epochs'])
+
+    return "baseline_w2v_%depochs.bin" % (conf['w2v_epochs'])
 
 
 if __name__ == '__main__':
@@ -240,7 +242,18 @@ if __name__ == '__main__':
         print(globals()['__doc__'] % locals())
         sys.exit(1)
 
-    input_path, output_path, curriculum = sys.argv[1:4]
+    input_path, curriculum = sys.argv[1:3]
+
+    conf = dict()
+    conf['curriculum_epochs'] = 1
+    conf['curriculum_start'] = 6
+    conf['curriculum_end'] = 15
+    conf['curriculum_step'] = 2
+    conf['w2v_epochs'] = 20
+    conf['start_alpha'] = 0.025
+    conf['end_alpha'] = 0.0001
+
+    output_path = w2v_curriculum_filename(curriculum, conf)
 
     if curriculum == '1':
         w2v = train_curriculum_word2vec(input_path, 'brown_clusters_wiki.txt', conf)
