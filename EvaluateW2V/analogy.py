@@ -82,6 +82,7 @@ class SimpleAnalogySolver(sklearn.base.BaseEstimator):
         """
         w = self.w.most_frequent(self.k) if self.k else self.w
         words = self.w.vocabulary.words
+        words_lower = set([x.lower() for x in words])
         word_id = self.w.vocabulary.word_id
         mean_vector = np.mean(w.vectors, axis=0)
         output = []
@@ -89,7 +90,7 @@ class SimpleAnalogySolver(sklearn.base.BaseEstimator):
         missing_words = 0
         for query in X:
             for query_word in query:
-                if query_word not in word_id:
+                if query_word not in words_lower:
                     missing_words += 1
         if missing_words > 0:
             logger.warning("Missing {} words. Will replace them with mean vector".format(missing_words))
@@ -102,9 +103,9 @@ class SimpleAnalogySolver(sklearn.base.BaseEstimator):
                 logger.info("Processing {}/{} batch".format(int(np.ceil(ids[1] / float(self.batch_size))),
                                                             int(np.ceil(X.shape[0] / float(self.batch_size)))))
 
-            A, B, C = np.vstack(w.get(word, mean_vector) for word in X_b[:, 0]), \
-                      np.vstack(w.get(word, mean_vector) for word in X_b[:, 1]), \
-                      np.vstack(w.get(word, mean_vector) for word in X_b[:, 2])
+            A, B, C = np.vstack(w.get(word, w.get(word.capitalize(), mean_vector)) for word in X_b[:, 0]), \
+                      np.vstack(w.get(word, w.get(word.capitalize(), mean_vector)) for word in X_b[:, 1]), \
+                      np.vstack(w.get(word, w.get(word.capitalize(), mean_vector)) for word in X_b[:, 2])
 
             if self.method == "add":
                 D = np.dot(w.vectors, (B - A + C).T)
@@ -123,4 +124,4 @@ class SimpleAnalogySolver(sklearn.base.BaseEstimator):
 
             output.append([words[id] for id in D.argmax(axis=0)])
 
-        return np.array([item for sublist in output for item in sublist])
+        return np.array([item.lower() for sublist in output for item in sublist])

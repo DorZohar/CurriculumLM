@@ -360,7 +360,7 @@ def evaluate_on_all(w):
     if isinstance(w, dict):
         w = Embedding.from_dict(w)
 
-    # Calculate results on similarity
+    #Calculate results on similarity
     logger.info("Calculating similarity benchmarks")
     similarity_tasks = {
         "MEN": fetch_MEN(),
