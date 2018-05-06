@@ -9,9 +9,9 @@ import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import cross_validate
 from sklearn.datasets import load_files
-import tarfile
 from scipy.stats import norm
 import pandas as pd
+import shutil
 
 from nltk.tokenize import WordPunctTokenizer
 from nltk.corpus import stopwords
@@ -37,15 +37,10 @@ def extrinsic_test__sentiment_analysis(w2v, alpha, folds = 5):
         path = _fetch_file(url="http://ai.stanford.edu/~amaas/data/sentiment/aclImdb_v1.tar.gz",
                            data_dir="sentiment",
                            uncompress=True,
-                           move='aclImdb',
+                           #move='aclImdb',
                            verbose=0)
 
-        tar = tarfile.open(path, "r:gz")
-        tar.extract("aclImdb/train/neg")
-        tar.extract("aclImdb/train/pos")
-        tar.extract("aclImdb/test/neg")
-        tar.extract("aclImdb/test/pos")
-        tar.close()
+        shutil.move("%s/aclImdb" % path, dataset_dir)
 
     t = time()
 
