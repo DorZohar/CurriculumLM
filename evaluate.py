@@ -64,7 +64,7 @@ def extrinsic_test__sentiment_analysis(w2v, alpha, folds = 5):
                                                                 padding='pre',
                                                                 truncating='post',
                                                                 )
-    test_features = [[word2index[word.lower()] for word in tokenizer.tokenize(text)] for text in test_data.data]
+    test_features = [[word2index.get(word.lower(), 0) for word in tokenizer.tokenize(text)] for text in test_data.data]
     test_features = keras.preprocessing.sequence.pad_sequences(test_features,
                                                                maxlen=MAX_LEN,
                                                                padding='pre',
