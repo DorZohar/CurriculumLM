@@ -80,7 +80,7 @@ def extrinsic_test__sentiment_analysis(w2v, alpha, folds = 5):
     model.add(keras.layers.LSTM(100, dropout=0.5))
     model.add(keras.layers.Dense(1, activation='sigmoid'))
 
-    model.compile(optimizer='RMSProp', loss='binary_crossentropy', metrics='accuracy')
+    model.compile(optimizer=keras.optimizers.Adam(), loss='binary_crossentropy', metrics='accuracy')
     early_stop_cb = keras.callbacks.EarlyStopping('val_accuracy', patience=4)
     model.fit(train_X,
               train_y,
