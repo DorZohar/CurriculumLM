@@ -71,7 +71,7 @@ def extrinsic_test__sentiment_analysis(w2v, alpha, folds = 5):
                                                                truncating='post',
                                                               )
 
-    train_X, valid_X, train_y, valid_y = train_test_split(train_features, train_data.target, test_size=0.2, shuffle=False)
+    train_X, valid_X, train_y, valid_y = train_test_split(train_features, train_data.target, test_size=0.1, shuffle=False)
 
     print("Done preprocessing dataset after %d seconds" % (time() - t))
 
@@ -80,13 +80,13 @@ def extrinsic_test__sentiment_analysis(w2v, alpha, folds = 5):
     model.add(keras.layers.LSTM(100, dropout=0.5))
     model.add(keras.layers.Dense(1, activation='sigmoid'))
 
-    model.compile(optimizer=keras.optimizers.Adam(), loss='binary_crossentropy', metrics='accuracy')
-    early_stop_cb = keras.callbacks.EarlyStopping('val_accuracy', patience=4)
+    model.compile(optimizer=keras.optimizers.Adam(), loss='binary_crossentropy', metrics=['accuracy'])
+    #early_stop_cb = keras.callbacks.EarlyStopping('val_accuracy', patience=4)
     model.fit(train_X,
               train_y,
               batch_size=64,
               epochs=5,
-              callbacks=[early_stop_cb],
+              #callbacks=[early_stop_cb],
               validation_data=(valid_X, valid_y))
 
     t = time()
