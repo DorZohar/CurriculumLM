@@ -7,7 +7,7 @@ from glob import glob
 def read_brown_clusters(path):
     word_dict = {}
 
-    with open(path, 'r') as fh:
+    with open(path, 'r', encoding='utf-8') as fh:
         for line in fh:
             line = line.strip().split()
             word_dict[line[1]] = line[0]
