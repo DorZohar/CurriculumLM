@@ -12,13 +12,6 @@ import os
 import tensorflow as tf
 
 
-# def perplexity(y_true, y_pred):
-#     return K.pow(K.constant(2.0), K.mean(K.sparse_categorical_crossentropy(y_true, y_pred)))
-
-
-learnable_vars = None
-
-
 class CustomSoftmax(keras.layers.Layer):
     def __init__(self, embeddingLayer, units, **kwargs):
         self.W = K.transpose(embeddingLayer.weights[0])
@@ -43,15 +36,6 @@ class CustomSoftmax(keras.layers.Layer):
 
     def compute_output_shape(self, input_shape):
         return input_shape[0], self.units
-
-def gradient_norm(y_true, y_pred):
-    loss = K.mean(K.sparse_categorical_crossentropy(y_true, y_pred))
-    grads = K.gradients(loss, learnable_vars)
-    grads_sum = K.constant(0)
-    for grad in grads:
-        grads_sum += K.sum(K.square(grad))
-
-    return K.sqrt(grads_sum)
 
 
 def create_embedding_matrix(word_dict, word2vec):
@@ -103,17 +87,6 @@ def model_struct(input_classes, output_classes, conf):
     return input_layer, output_layer
 
 
-def update_learnable_weights(model):
-    global learnable_vars
-
-    learnable_vars = []
-    for layer in model.layers:
-        if layer.trainable:
-            learnable_vars += layer.weights
-
-    return
-
-
 def create_language_model(conf, input_classes, output_classes, embedding_mat=None, softmax_mat=None, softmax_bias=None, lstm_weights=None):
 
     assert (softmax_mat is None) == (softmax_bias is None)
@@ -132,17 +105,10 @@ def create_language_model(conf, input_classes, output_classes, embedding_mat=Non
 
     model = keras.models.Model(input_layer, output_layer)
 
-    update_learnable_weights(model)
-
-    if conf['lstm__sgd_optimizer']:
-        optimizer = keras.optimizers.SGD(lr=conf['lstm__learn_rate'], momentum=conf['lstm__momentum'])
-    else:
-        optimizer = keras.optimizers.RMSprop(lr=conf['lstm__learn_rate'])
-
-    model.compile(optimizer=optimizer,
+    model.compile(optimizer=keras.optimizers.SGD(conf['lstm__learn_rate']),
                   loss='sparse_categorical_crossentropy',
                   sample_weight_mode='temporal',
-                  weighted_metrics=['accuracy', gradient_norm])
+                  weighted_metrics=['accuracy'])
 
     if embedding_mat is not None:
         model.get_layer('Embedding').set_weights([embedding_mat])
@@ -364,7 +330,7 @@ def curriculum_model(conf):
     softmax_bias = None
     lstm_weights = None
 
-    word2id, classes = general.create_cluster_dict(word2cluster, 1)
+    word2id, classes = general.create_cluster_dict(word2cluster, conf['curriculum__start'] + 1)
 
     if not conf['curriculum__input']:
         word2vec = KeyedVectors.load_word2vec_format(conf['w2v_path'], binary=True)
@@ -372,7 +338,7 @@ def curriculum_model(conf):
 
     for i in range(conf['curriculum__start'], conf['curriculum__stop'], conf['curriculum__jumps']):
 
-        if i > 0:
+        if i > conf['curriculum__start']:
             old_word2id = word2id
             word2id, classes = general.create_cluster_dict(word2cluster, i + 1)
 
